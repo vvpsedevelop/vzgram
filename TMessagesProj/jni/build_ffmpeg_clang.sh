@@ -2,32 +2,32 @@
 set -e
 function build_one {
 	echo "Building ${ARCH}..."
-
+ 
 	PREBUILT=${NDK}/toolchains/${PREBUILT_ARCH}${PREBUILT_MIDDLE}-${VERSION}/prebuilt/${BUILD_PLATFORM}
 	PLATFORM=${NDK}/platforms/android-${ANDROID_API}/arch-${ARCH}
-
+ 
 	TOOLS_PREFIX="${LLVM_BIN}/${ARCH_NAME}-linux-${BIN_MIDDLE}-"
-
+ 
 	LD=${TOOLS_PREFIX}ld
 	AR=${TOOLS_PREFIX}ar
 	STRIP=${TOOLS_PREFIX}strip
 	NM=${TOOLS_PREFIX}nm
-
+ 
 	CC_PREFIX="${LLVM_BIN}/${CLANG_PREFIX}-linux-${BIN_MIDDLE}${ANDROID_API}-"
-
+ 
 	CC=${CC_PREFIX}clang
 	CXX=${CC_PREFIX}clang++
 	CROSS_PREFIX=${PREBUILT}/bin/${ARCH_NAME}-linux-${BIN_MIDDLE}-
 	
 	INCLUDES=" -I${LIBVPXPREFIX}/include"
 	LIBS=" -L${LIBVPXPREFIX}/lib"
-
+ 
 	echo "Cleaning..."
 	rm -f config.h
 	make clean || true
-
+ 
 	echo "Configuring..."
-
+ 
 	./configure \
 	--nm=${NM} \
 	--ar=${AR} \
@@ -99,15 +99,18 @@ function build_one {
 	--enable-demuxer=mp3 \
 	--enable-hwaccels \
 	$ADDITIONAL_CONFIGURE_FLAG
-
+ 
+	sed -i 's/-Werror=implicit-function-declaration//g' ffbuild/config.mak
+	sed -i 's/-Werror=implicit-int//g' ffbuild/config.mak
+ 
 	#echo "continue?"
 	#read
 	make -j$COMPILATION_PROC_COUNT
 	make install
 }
-
+ 
 function setCurrentPlatform {
-
+ 
 	CURRENT_PLATFORM="$(uname -s)"
 	case "${CURRENT_PLATFORM}" in
 		Darwin*)
@@ -124,45 +127,45 @@ function setCurrentPlatform {
 			COMPILATION_PROC_COUNT=1
 			;;
 	esac
-
+ 
 	echo "Build platform: ${BUILD_PLATFORM}"
 	echo "Parallel jobs: ${COMPILATION_PROC_COUNT}"
-
+ 
 }
-
+ 
 function checkPreRequisites {
-
+ 
 	if ! [ -d "ffmpeg" ] || ! [ "$(ls -A ffmpeg)" ]; then
 		echo -e "\033[31mFailed! Submodule 'ffmpeg' not found!\033[0m"
 		echo -e "\033[31mTry to run: 'git submodule init && git submodule update'\033[0m"
 		exit
 	fi
-
+ 
 	if [ -z "$NDK" -a "$NDK" == "" ]; then
 		echo -e "\033[31mFailed! NDK is empty. Run 'export NDK=[PATH_TO_NDK]'\033[0m"
 		exit
 	fi
 }
-
+ 
 setCurrentPlatform
 checkPreRequisites
-
+ 
 # TODO: fix env variable for NDK
 # NDK=/opt/android-sdk/ndk-bundle
-
+ 
 cd ffmpeg
-
+ 
 ## common
 LLVM_PREFIX="${NDK}/toolchains/llvm/prebuilt/linux-x86_64"
 LLVM_BIN="${LLVM_PREFIX}/bin"
 VERSION="4.9"
-
+ 
 function build {
 	for arg in "$@"; do
 		case "${arg}" in
 			x86_64)
 				ANDROID_API=21
-
+ 
 				ARCH=x86_64
 				ARCH_NAME=x86_64
 				PREBUILT_ARCH=x86_64
@@ -177,7 +180,7 @@ function build {
 			;;
 			arm64)
 				ANDROID_API=21
-
+ 
 				ARCH=arm64
 				ARCH_NAME=aarch64
 				PREBUILT_ARCH=aarch64
@@ -193,7 +196,7 @@ function build {
 			;;
 			arm)
 				ANDROID_API=16
-
+ 
 				ARCH=arm
 				ARCH_NAME=arm
 				PREBUILT_ARCH=arm
@@ -209,7 +212,7 @@ function build {
 			;;
 			x86)
 				ANDROID_API=16
-
+ 
 				ARCH=x86
 				ARCH_NAME=i686
 				PREBUILT_ARCH=x86
@@ -228,7 +231,7 @@ function build {
 		esac
 	done
 }
-
+ 
 if (( $# == 0 )); then
 	build x86_64 arm64 arm x86
 else
