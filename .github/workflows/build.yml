@@ -34,6 +34,13 @@ jobs:
           chmod +x gradlew
           chmod +x TMessagesProj/jni/*.sh
 
+      - name: Install specific NDK
+        run: |
+          sdkmanager --install "ndk;21.4.7075529"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/21.4.7075529" >> $GITHUB_ENV
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/21.4.7075529" >> $GITHUB_ENV
+          echo "NDK=$ANDROID_SDK_ROOT/ndk/21.4.7075529" >> $GITHUB_ENV
+
       - name: Patch native libs
         working-directory: TMessagesProj/jni
         run: |
