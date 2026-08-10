@@ -41,7 +41,6 @@ function build_one {
 	--x86asmexe=$NDK/prebuilt/${BUILD_PLATFORM}/bin/yasm \
 	--prefix=$PREFIX \
 	--enable-pic \
-	--disable-werror \
 	--disable-shared \
 	--enable-static \
 	--enable-asm \
