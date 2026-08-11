@@ -3,22 +3,11 @@
 set -e
 
 patch -d ffmpeg -p1 < patches/ffmpeg/0001-compilation-magic.patch
-patch -d ffmpeg -p1 < patches/ffmpeg/0002-compilation-magic-2.patch
-
-# Fix: restore headers needed by newer clang (NDK 21+) that treats
-# implicit function declarations as hard errors instead of warnings.
-sed -i '/#ifndef NEG_USR32/i \
-#include <limits.h>\
-#include "libavutil/common.h"\
-#include "libavutil/intreadwrite.h"\
-#include "libavutil/log.h"\
-#include "libavutil/avassert.h"\
-#include "libavutil/error.h"\
-#include "mathops.h"\
-#include "vlc.h"\
-#ifndef AV_INPUT_BUFFER_PADDING_SIZE\
-#   define AV_INPUT_BUFFER_PADDING_SIZE 64\
-#endif' ffmpeg/libavcodec/get_bits.h
+# NOTE: 0002-compilation-magic-2.patch is intentionally NOT applied.
+# It strips real function bodies (get_xbits, show_bits, get_vlc2, etc.)
+# out of get_bits.h, which breaks linking on modern NDK/clang.
+# Skipping it keeps get_bits.h intact with all its original includes
+# and function implementations, which is what we actually need.
 
 function cp {
 	install -D $@
