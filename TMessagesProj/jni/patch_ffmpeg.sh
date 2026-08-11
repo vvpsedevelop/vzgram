@@ -15,6 +15,7 @@ sed -i '/#ifndef NEG_USR32/i \
 #include "libavutil/avassert.h"\
 #include "libavutil/error.h"\
 #include "mathops.h"\
+#include "vlc.h"\
 #ifndef AV_INPUT_BUFFER_PADDING_SIZE\
 #   define AV_INPUT_BUFFER_PADDING_SIZE 64\
 #endif' ffmpeg/libavcodec/get_bits.h
