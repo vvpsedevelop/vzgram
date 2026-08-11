@@ -5,6 +5,19 @@ set -e
 patch -d ffmpeg -p1 < patches/ffmpeg/0001-compilation-magic.patch
 patch -d ffmpeg -p1 < patches/ffmpeg/0002-compilation-magic-2.patch
 
+# Fix: restore headers needed by newer clang (NDK 21+) that treats
+# implicit function declarations as hard errors instead of warnings.
+sed -i '/#ifndef NEG_USR32/i \
+#include <limits.h>\
+#include "libavutil/common.h"\
+#include "libavutil/intreadwrite.h"\
+#include "libavutil/log.h"\
+#include "libavutil/avassert.h"\
+#include "libavutil/error.h"\
+#ifndef AV_INPUT_BUFFER_PADDING_SIZE\
+#   define AV_INPUT_BUFFER_PADDING_SIZE 64\
+#endif' ffmpeg/libavcodec/get_bits.h
+
 function cp {
 	install -D $@
 }
