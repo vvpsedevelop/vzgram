@@ -42,6 +42,11 @@ cp ffmpeg/libavcodec/vlc.h ffmpeg/build/armeabi-v7a/include/libavcodec/vlc.h
 cp ffmpeg/libavcodec/vlc.h ffmpeg/build/x86/include/libavcodec/vlc.h
 cp ffmpeg/libavcodec/vlc.h ffmpeg/build/x86_64/include/libavcodec/vlc.h
 
+cp ffmpeg/libavcodec/put_bits.h ffmpeg/build/arm64-v8a/include/libavcodec/put_bits.h
+cp ffmpeg/libavcodec/put_bits.h ffmpeg/build/armeabi-v7a/include/libavcodec/put_bits.h
+cp ffmpeg/libavcodec/put_bits.h ffmpeg/build/x86/include/libavcodec/put_bits.h
+cp ffmpeg/libavcodec/put_bits.h ffmpeg/build/x86_64/include/libavcodec/put_bits.h
+
 cp ffmpeg/libavutil/intmath.h ffmpeg/build/arm64-v8a/include/libavutil/intmath.h
 cp ffmpeg/libavutil/intmath.h ffmpeg/build/armeabi-v7a/include/libavutil/intmath.h
 cp ffmpeg/libavutil/intmath.h ffmpeg/build/x86/include/libavutil/intmath.h
