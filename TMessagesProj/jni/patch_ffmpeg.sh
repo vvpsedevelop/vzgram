@@ -3,17 +3,9 @@
 set -e
 
 patch -d ffmpeg -p1 < patches/ffmpeg/0001-compilation-magic.patch
-# NOTE: 0002-compilation-magic-2.patch is intentionally NOT applied to the
-# ffmpeg SOURCE tree. It strips real function bodies (get_xbits, show_bits,
-# get_vlc2, etc.) which breaks linking of libavcodec.a/libavformat.a on
-# modern NDK/clang. FFmpeg's own build must compile the untouched header.
-#
-# The app's own C++ files (gifvideo.cpp, TgNetWrapper.cpp, ...) also
-# #include this same header directly though, and being C++17 they choke on
-# the C-only 'register' keyword and on macros (NEG_USR32, sign_extend, ...)
-# that only resolve inside FFmpeg's own internal build. So we install a
-# separately sanitized COPY for external/app consumption below, while the
-# ffmpeg source tree itself stays untouched.
+# 0002-compilation-magic-2.patch is intentionally NOT applied to the ffmpeg
+# SOURCE tree (it strips function bodies needed for linking). Instead we
+# sanitize separate INSTALLED copies below for C++17 app consumers.
 
 function cp {
 	install -D $@
@@ -63,22 +55,31 @@ cp ffmpeg/libavutil/intmath.h ffmpeg/build/armeabi-v7a/include/libavutil/intmath
 cp ffmpeg/libavutil/intmath.h ffmpeg/build/x86/include/libavutil/intmath.h
 cp ffmpeg/libavutil/intmath.h ffmpeg/build/x86_64/include/libavutil/intmath.h
 
-# --- Sanitize the INSTALLED copies of get_bits.h for C++17 app consumers ---
-# (the ffmpeg source tree itself is left untouched, see note above)
+# --- Sanitize INSTALLED copies for C++17 app consumers ---
+# (the ffmpeg source tree itself is left untouched)
 for ARCH_DIR in arm64-v8a armeabi-v7a x86 x86_64; do
-	GB="ffmpeg/build/${ARCH_DIR}/include/libavcodec/get_bits.h"
+	INC="ffmpeg/build/${ARCH_DIR}/include/libavcodec"
+	GB="$INC/get_bits.h"
+	GOLOMB="$INC/golomb.h"
+	VLC="$INC/vlc.h"
+	PUTBITS="$INC/put_bits.h"
+	BYTESTREAM="$INC/bytestream.h"
 
-	# 'register' is invalid in C++17; harmless to drop as a storage class.
-	sed -i 's/\bregister //g' "$GB"
+	# 'register' is invalid in C++17; harmless to drop everywhere.
+	for f in "$GB" "$GOLOMB" "$VLC" "$PUTBITS" "$BYTESTREAM"; do
+		sed -i 's/\bregister //g' "$f"
+	done
 
-	# mathops.h (and the arch-specific headers it pulls in, e.g.
-	# libavutil/reverse.h) are internal, non-installed FFmpeg headers.
-	# We already provide portable fallbacks for the macros get_bits.h
-	# needs below, so just neutralize this include in the public copy.
-	sed -i 's|#include "mathops.h"|// #include "mathops.h" (removed for public/C++ consumers)|' "$GB"
+	# mathops.h (and internal headers it pulls in, e.g. libavutil/reverse.h)
+	# are not installed publicly. We provide fallback macros ourselves, so
+	# just neutralize the include wherever it appears.
+	for f in "$GB" "$GOLOMB" "$VLC" "$PUTBITS" "$BYTESTREAM"; do
+		sed -i 's|#include "mathops.h"|// #include "mathops.h" (removed for public/C++ consumers)|' "$f"
+	done
 
-	# Provide portable fallbacks for macros that normally come from
-	# FFmpeg's internal, non-installed arch-specific mathops headers.
+	# Portable fallbacks for macros normally supplied by FFmpeg's internal
+	# arch-specific mathops headers. Inserted once into get_bits.h; golomb.h
+	# etc. pick them up transitively since they #include get_bits.h.
 	sed -i '/#include <stdint.h>/a \
 #include <limits.h>\
 #ifndef NEG_USR32\
@@ -98,5 +99,14 @@ static inline int sign_extend(int val, unsigned bits) {\
 static inline unsigned zero_extend(unsigned val, unsigned bits) {\
     return (val << ((8 * sizeof(int)) - bits)) >> ((8 * sizeof(int)) - bits);\
 }\
+#endif\
+#ifndef SUINT\
+#   define SUINT unsigned\
+#endif\
+#ifndef MASK_ABS\
+#   define MASK_ABS(mask, level) do { mask = level >> 31; level = (level ^ mask) - mask; } while (0)\
+#endif\
+#ifndef FASTDIV\
+#   define FASTDIV(a,b) ((a)/(b))\
 #endif' "$GB"
 done
