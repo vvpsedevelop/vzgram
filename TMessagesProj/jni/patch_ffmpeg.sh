@@ -11,6 +11,7 @@ patch -d ffmpeg -p1 < patches/ffmpeg/0001-compilation-magic.patch
 # class->clazz rename was actually needed there), which breaks linking of
 # mov.o against libavformat.a. Restore the function body.
 sed -i '/#endif \/\* AVFORMAT_ISOM_H \*\//i \
+enum AVCodecID ff_get_pcm_codec_id(int bps, int flt, int be, int sflags);\
 static inline enum AVCodecID ff_mov_get_lpcm_codec_id(int bps, int flags)\
 {\
     return ff_get_pcm_codec_id(bps, flags \& 1, flags \& 2, flags \& 4 ? -1 : 0);\
