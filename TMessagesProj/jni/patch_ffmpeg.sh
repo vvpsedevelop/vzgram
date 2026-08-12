@@ -7,6 +7,15 @@ patch -d ffmpeg -p1 < patches/ffmpeg/0001-compilation-magic.patch
 # SOURCE tree (it strips function bodies needed for linking). Instead we
 # sanitize separate INSTALLED copies below for C++17 app consumers.
 
+# 0001 also strips ff_mov_get_lpcm_codec_id's body out of isom.h (only the
+# class->clazz rename was actually needed there), which breaks linking of
+# mov.o against libavformat.a. Restore the function body.
+sed -i '/#endif \/\* AVFORMAT_ISOM_H \*\//i \
+static inline enum AVCodecID ff_mov_get_lpcm_codec_id(int bps, int flags)\
+{\
+    return ff_get_pcm_codec_id(bps, flags \& 1, flags \& 2, flags \& 4 ? -1 : 0);\
+}' ffmpeg/libavformat/isom.h
+
 function cp {
 	install -D $@
 }
