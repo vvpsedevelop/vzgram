@@ -48,7 +48,7 @@ android {
         debug {
             debuggable true
             jniDebuggable true
-            applicationIdSuffix ".beta"
+            applicationIdSuffix ""
             minifyEnabled false
             shrinkResources false
             multiDexEnabled true
